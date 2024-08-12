@@ -2,11 +2,20 @@
 - name: Backup QCOW2 File
   hosts: IOT
   vars:
+    qcow_dir: "{{ qcow_dir }}"
     qcow_file: "{{ qcow_dir }}/Aapanel.qcow2"
     zip_file: "{{ qcow_dir }}/aapanel.qcow2.zip"
     vm_name: "{{ semaphore_vm_name | default('Panel') }}"
 
   tasks:
+    - name: Debug variables
+      debug:
+        msg:
+          - "qcow_dir: {{ qcow_dir }}"
+          - "qcow_file: {{ qcow_file }}"
+          - "zip_file: {{ zip_file }}"
+          - "vm_name: {{ vm_name }}"
+
     - name: Ensure ZIP directory exists
       file:
         path: "{{ qcow_dir }}"
