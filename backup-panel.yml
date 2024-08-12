@@ -1,0 +1,61 @@
+---
+- name: Backup QCOW2 File
+  hosts: IOT
+  vars:
+    qcow_file: "{{ qcow_dir }}/Aapanel.qcow2"
+    zip_file: "{{ qcow_dir }}/aapanel.qcow2.zip"
+    vm_name: "{{ semaphore_vm_name | default('Panel') }}"
+
+  tasks:
+    - name: Ensure ZIP directory exists
+      file:
+        path: "{{ qcow_dir }}"
+        state: directory
+
+    - name: Check if VM is running
+      virt:
+        name: "{{ vm_name }}"
+        command: status
+      register: vm_status
+      ignore_errors: yes
+
+    - name: Shutdown VM if running
+      virt:
+        name: "{{ vm_name }}"
+        state: shutdown
+      when: vm_status.status == "running"
+
+    - name: Wait for VM to shut down
+      virt:
+        name: "{{ vm_name }}"
+        command: status
+      register: shutdown_status
+      until: shutdown_status.status != "running"
+      retries: 30
+      delay: 5
+      when: vm_status.status == "running"
+
+    - name: Check if QCOW file exists
+      stat:
+        path: "{{ qcow_file }}"
+      register: qcow_stat
+
+    - name: Zip QCOW file
+      archive:
+        path: "{{ qcow_file }}"
+        dest: "{{ zip_file }}"
+        format: zip
+      when: qcow_stat.stat.exists
+
+    - name: Start VM
+      virt:
+        name: "{{ vm_name }}"
+        state: running
+
+    - name: Wait for VM to start
+      pause:
+        seconds: 30
+
+    - name: Print completion message
+      debug:
+        msg: "All operations completed successfully."
