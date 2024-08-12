@@ -1,0 +1,22 @@
+---
+- name: Update and upgrade apt packages
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Upgrade all packages
+      ansible.builtin.apt:
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+      register: upgrade_result
+
+    - name: Display upgrade result
+      ansible.builtin.debug:
+        var: upgrade_result
+      when: upgrade_result.changed
