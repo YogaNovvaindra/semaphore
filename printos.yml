@@ -1,7 +1,13 @@
 ---
-- hosts: web_servers
-  become: true
+- name: Print OS information
+  hosts: server
+  gather_facts: yes
+
   tasks:
-    - name: Print OS info
-      ansible.builtin.package:
-        name: apache2
+    - name: Display OS info
+      ansible.builtin.debug:
+        msg: "Operating System: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+    - name: Display kernel version
+      ansible.builtin.debug:
+        msg: "Kernel version: {{ ansible_kernel }}"
