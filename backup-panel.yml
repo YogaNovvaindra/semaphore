@@ -20,21 +20,25 @@
       register: vm_status
       ignore_errors: yes
 
+    - name: Debug VM status
+      debug:
+        var: vm_status
+
     - name: Shutdown VM if running
       virt:
         name: "{{ vm_name }}"
         state: shutdown
-      when: vm_status.status == "running"
+      when: vm_status is succeeded and vm_status.status == "running"
 
     - name: Wait for VM to shut down
       virt:
         name: "{{ vm_name }}"
         command: status
       register: shutdown_status
-      until: shutdown_status.status != "running"
+      until: shutdown_status is succeeded and shutdown_status.status != "running"
       retries: 30
       delay: 5
-      when: vm_status.status == "running"
+      when: vm_status is succeeded and vm_status.status == "running"
 
     - name: Check if QCOW file exists
       stat:
