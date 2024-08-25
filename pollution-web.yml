@@ -1,6 +1,6 @@
 ---
 - name: Update and rebuild Docker application
-  hosts: your_target_host
+  hosts: Panel
   become: yes  # Use sudo privileges
 
   tasks:
