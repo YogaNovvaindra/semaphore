@@ -13,54 +13,53 @@
         path: "{{ qcow_dir }}"
         state: directory
 
-    - name: Check if VM is running
-      virt:
+    - name: Get VM info
+      community.libvirt.virt:
         name: "{{ vm_name }}"
-        command: status
-      register: vm_status
-      ignore_errors: yes
+        command: info
+      register: vm_info
 
-    - name: Debug VM status
-      debug:
-        var: vm_status
+    - name: Debug VM info
+      ansible.builtin.debug:
+        var: vm_info
 
     - name: Shutdown VM if running
-      virt:
+      community.libvirt.virt:
         name: "{{ vm_name }}"
         state: shutdown
-      when: vm_status is succeeded and vm_status.status == "running"
+      when: vm_info.status == "running"
 
     - name: Wait for VM to shut down
-      virt:
+      community.libvirt.virt:
         name: "{{ vm_name }}"
-        command: status
-      register: shutdown_status
-      until: shutdown_status is succeeded and shutdown_status.status != "running"
+        command: info
+      register: shutdown_info
+      until: shutdown_info.status == "shutdown"
       retries: 30
       delay: 5
-      when: vm_status is succeeded and vm_status.status == "running"
+      when: vm_info.status == "running"
 
     - name: Check if QCOW file exists
-      stat:
+      ansible.builtin.stat:
         path: "{{ qcow_file }}"
       register: qcow_stat
 
     - name: Zip QCOW file
-      archive:
+      ansible.builtin.archive:
         path: "{{ qcow_file }}"
         dest: "{{ zip_file }}"
         format: zip
       when: qcow_stat.stat.exists
 
     - name: Start VM
-      virt:
+      community.libvirt.virt:
         name: "{{ vm_name }}"
         state: running
 
     - name: Wait for VM to start
-      pause:
+      ansible.builtin.pause:
         seconds: 30
 
     - name: Print completion message
-      debug:
+      ansible.builtin.debug:
         msg: "All operations completed successfully."

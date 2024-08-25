@@ -1,0 +1,31 @@
+---
+- name: Update and rebuild Docker application
+  hosts: your_target_host
+  become: yes  # Use sudo privileges
+
+  tasks:
+    - name: SSH to server and update git repository
+      ansible.builtin.shell:
+        cmd: |
+          cd /www/wwwroot/adit.local/
+          git pull
+      args:
+        executable: /bin/bash
+
+    - name: Build Docker containers
+      ansible.builtin.shell:
+        cmd: docker-compose build
+      args:
+        chdir: /www/wwwroot/adit.local/
+
+    - name: Start Docker containers
+      ansible.builtin.shell:
+        cmd: docker-compose up -d
+      args:
+        chdir: /www/wwwroot/adit.local/
+
+    - name: Remove dangling Docker images
+      ansible.builtin.shell:
+        cmd: docker image prune -f
+      args:
+        executable: /bin/bash
