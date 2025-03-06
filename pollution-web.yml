@@ -29,3 +29,9 @@
         cmd: docker image prune -f
       args:
         executable: /bin/bash
+
+    - name: Remove dangling Docker builder cache
+      ansible.builtin.shell:
+        cmd: docker builder prune -f
+      args:
+        executable: /bin/bash
