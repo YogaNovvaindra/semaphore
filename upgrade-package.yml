@@ -1,31 +1,47 @@
 ---
-- name: Update and upgrade apt packages
+- name: Update and upgrade apt packages with reboot notification
   hosts: all
-  become: yes
+  become: true
+  tags: [packages, upgrade]
+
+  vars:
+    cache_valid_time: 3600
+    upgrade_method: dist
 
   tasks:
-    - name: Read hostname from /etc/hostname
-      ansible.builtin.command: cat /etc/hostname
-      register: hostname_result
+    - name: Get hostname
+      ansible.builtin.slurp:
+        src: /etc/hostname
+      register: hostname_raw
       changed_when: false
 
-    - name: Print hostname
+    - name: Display which host is updating
       ansible.builtin.debug:
-        msg: "Updating packages on host: {{ hostname_result.stdout }}"
-        
-    - name: Update apt cache
+        msg: "Updating packages on host {{ hostname_raw.content | b64decode | trim }}"
+
+    - name: Update cache and perform upgrade
       ansible.builtin.apt:
         update_cache: yes
-        cache_valid_time: 3600
-
-    - name: Upgrade all packages
-      ansible.builtin.apt:
-        upgrade: dist
+        cache_valid_time: "{{ cache_valid_time }}"
+        upgrade: "{{ upgrade_method }}"
         autoremove: yes
         autoclean: yes
+        force_apt_get: yes
       register: upgrade_result
+      notify: "Check if reboot required"
 
-    - name: Display upgrade result
+    - name: Show upgrade summary if any changes occurred
       ansible.builtin.debug:
         var: upgrade_result
       when: upgrade_result.changed
+
+  handlers:
+    - name: Check if reboot required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_file
+
+    - name: Notify admin that reboot is required
+      ansible.builtin.debug:
+        msg: "⚠️ Host {{ inventory_hostname }} requires reboot due to package upgrades."
+      when: reboot_file.stat.exists
