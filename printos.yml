@@ -1,6 +1,6 @@
 ---
 - name: Print OS information
-  hosts: server
+  hosts: all
   gather_facts: yes
 
   tasks:
